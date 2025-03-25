@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# Function to query subdomain info
+query_subdomain() {
+    local domain=$1
+    local subdomain=$2
+    local full="${subdomain}.${domain}"
+
+    # Run dig and parse the first A record using awk
+    result=$(dig +short -t A ${full})
+    
+    if [[ -n "$result" ]]; then
+        echo "The subdomain ${subdomain} is an A record and points to ${result}"
+    else
+        # If no A record, check for CNAME
+        result=$(dig +short -t CNAME ${full})
+        if [[ -n "$result" ]]; then
+            echo "The subdomain ${subdomain} is a CNAME record and points to ${result}"
+        else
+            echo "The subdomain ${subdomain} does not exist or has no A/CNAME record"
+        fi
+    fi
+}
+
+# Main execution
+main() {
+    local domain=$1
+    local subdomain=$2
+
+    if [[ -n "$subdomain" ]]; then
+        # If subdomain provided, query only that
+        query_subdomain "$domain" "$subdomain"
+    else
+        # Default order of subdomains
+        for sub in www lb-01 web-01 web-02
+        do
+            query_subdomain "$domain" "$sub"
+        done
+    fi
+}
+
+main "$@"
