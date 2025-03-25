@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# This is a script to check for the sub domains and records.
+
+
+# Variable declaration
+domain=$1
+subdomain=$2
+
+# Function to perform the dig query
+query_subdomain() {
+    local domain=$1
+    local sub=$2
+    local ip
+
+    ip=$(dig +short A "${sub}.${domain}" | awk 'NR==1{print $1}')
+    if [[ -n "$ip" ]]; then
+        echo "The subdomain ${sub} is a A record and points to ${ip}"
+    fi
+}
+
+main() {
+    if [[ -n "$subdomain" ]]; then
+        query_subdomain "$domain" "$subdomain"
+    else
+        for sub in www lb-01 web-01 web-02; do
+            query_subdomain "$domain" "$sub"
+        done
+    fi
+}
+
+main
