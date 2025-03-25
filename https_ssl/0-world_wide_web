@@ -1,42 +1,43 @@
 #!/usr/bin/env bash
 # This is a script to check for the sub domains and records.
 
+
 # Function to query subdomain info
 query_subdomain() {
     local domain=$1
-    local subdomain=$2
-    local full="${subdomain}.${domain}"
+    local sub=$2
+    local full="${sub}.${domain}"
 
-    # Run dig and parse the first A record using awk
-    result=$(dig +short -t A ${full})
-    
-    if [[ -n "$result" ]]; then
-        echo "The subdomain ${subdomain} is an A record and points to ${result}"
-    else
-        # If no A record, check for CNAME
-        result=$(dig +short -t CNAME ${full})
-        if [[ -n "$result" ]]; then
-            echo "The subdomain ${subdomain} is a CNAME record and points to ${result}"
-        else
-            echo "The subdomain ${subdomain} does not exist or has no A/CNAME record"
-        fi
+    # Check for A record first
+    local a_result=$(dig +short A "${full}" | awk 'NR==1 {print $1}')
+    if [[ -n "$a_result" ]]; then
+        echo "The subdomain ${sub} is a A record and points to ${a_result}"
+        return
     fi
+
+    # If no A record, check CNAME
+    local cname_result=$(dig +short CNAME "${full}" | awk 'NR==1 {print $1}')
+    if [[ -n "$cname_result" ]]; then
+        echo "The subdomain ${sub} is a CNAME record and points to ${cname_result}"
+        return
+    fi
+
+    # If neither found
+    echo "The subdomain ${sub} does not exist or has no A/CNAME record"
 }
 
 # Main execution
 main() {
     local domain=$1
-    local subdomain=$2
+    local sub=$2
 
-    if [[ -n "$subdomain" ]]; then
-        # If subdomain provided, query only that
-        query_subdomain "$domain" "$subdomain"
+    # If subdomain is provided, query that
+    if [[ -n "$sub" ]]; then
+        query_subdomain "$domain" "$sub"
     else
-        # Default order of subdomains
-        for sub in www lb-01 web-01 web-02
-        do
-            query_subdomain "$domain" "$sub"
-        done
+        # Optional: prompt user to enter subdomains or exit
+        echo "No subdomain provided. Please specify a subdomain."
+        exit 1
     fi
 }
 
