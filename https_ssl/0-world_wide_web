@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# This is a script to check for the sub domains and records.
 
 # Function to query subdomain info
 query_subdomain() {
