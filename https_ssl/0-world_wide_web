@@ -2,43 +2,30 @@
 # This is a script to check for the sub domains and records.
 
 
-# Function to query subdomain info
+# Variable declaration
+domain=$1
+subdomain=$2
+
+# Function to perform the dig query
 query_subdomain() {
     local domain=$1
     local sub=$2
-    local full="${sub}.${domain}"
+    local ip
 
-    # Check for A record first
-    local a_result=$(dig +short A "${full}" | awk 'NR==1 {print $1}')
-    if [[ -n "$a_result" ]]; then
-        echo "The subdomain ${sub} is a A record and points to ${a_result}"
-        return
+    ip=$(dig +short A "${sub}.${domain}" | awk 'NR==1{print $1}')
+    if [[ -n "$ip" ]]; then
+        echo "The subdomain ${sub} is a A record and points to ${ip}"
     fi
-
-    # If no A record, check CNAME
-    local cname_result=$(dig +short CNAME "${full}" | awk 'NR==1 {print $1}')
-    if [[ -n "$cname_result" ]]; then
-        echo "The subdomain ${sub} is a CNAME record and points to ${cname_result}"
-        return
-    fi
-
-    # If neither found
-    echo "The subdomain ${sub} does not exist or has no A/CNAME record"
 }
 
-# Main execution
 main() {
-    local domain=$1
-    local sub=$2
-
-    # If subdomain is provided, query that
-    if [[ -n "$sub" ]]; then
-        query_subdomain "$domain" "$sub"
+    if [[ -n "$subdomain" ]]; then
+        query_subdomain "$domain" "$subdomain"
     else
-        # Optional: prompt user to enter subdomains or exit
-        echo "No subdomain provided. Please specify a subdomain."
-        exit 1
+        for sub in www lb-01 web-01 web-02; do
+            query_subdomain "$domain" "$sub"
+        done
     fi
 }
 
-main "$@"
+main
