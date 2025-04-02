@@ -1,0 +1,45 @@
+global
+    log /dev/log    local0
+    log /dev/log    local1 notice
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+    tune.ssl.default-dh-param 2048
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
+
+#frontend http_front
+#    bind *:80
+#    default_backend http_back
+
+#frontend https_front
+#    http-request redirect scheme https unless { ssl_fc }
+#    default_backend http_back
+
+
+frontend http_front
+    bind *:80
+    # Redirect HTTP to HTTPS
+    redirect scheme https code 301 if !{ ssl_fc }
+
+#frontend https_front
+#    default_backend http_back
+frontend https_front
+    bind *:443 ssl crt /etc/ssl/private/pmuwanguzi.tech.pem
+    http-request redirect scheme https unless { ssl_fc }
+    default_backend http_back
+backend http_back
+    balance roundrobin
+    option httpchk HEAD / HTTP/1.1\r\nHost:localhost
+    server 6392-web-01 3.84.44.53:80 check
+    server 6392-web-02 54.172.108.60:80 check
